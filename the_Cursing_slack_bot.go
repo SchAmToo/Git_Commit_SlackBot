@@ -39,12 +39,12 @@ func slack_bot_post(message string){
 	slack_client := &http.Client{}
 	response, err := slack_client.Do(req)
 	if err != nil {
-        panic(err)
-    }
-    defer response.Body.Close()
-    fmt.Println("response Status:", response.Status)
-    fmt.Println("response Headers:", response.Header)
-    body, _ := ioutil.ReadAll(response.Body)
-    fmt.Println("response Body:", string(body))
+		panic(err)
+	}
+	defer response.Body.Close()
+	fmt.Println("response Status:", response.Status)
+	fmt.Println("response Headers:", response.Header)
+	body, _ := ioutil.ReadAll(response.Body)
+	fmt.Println("response Body:", string(body))
 }
 
