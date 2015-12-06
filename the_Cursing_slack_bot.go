@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"regexp"
 )
 func main() {
 	//goroutine grabbing rss feeds from yaml(?) of each username
@@ -74,45 +75,46 @@ func github_rss_feed(username string) {
 // Above is from -> http://siongui.github.io/2015/03/03/go-parse-web-feed-rss-atom/
 
 	url_to_use := "https://github.com/"+username+".atom"
-	req, err := http.NewRequest("GET", url_to_use, nil)
-	req.Header.Set("Content-Type", "application/atom+xml")
-	github_client := &http.Client{}
-	response, err := github_client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer response.Body.Close()
-	body, _ := ioutil.ReadAll(response.Body)
-
+	body := http_request(url_to_use, "")
 	rss_decoded := RSS_Header{}
-	err = xml.Unmarshal(body, &rss_decoded)
+	err := xml.Unmarshal(body, &rss_decoded)
 	if err != nil{
 		log.Fatal(err)
 	}
 
-	for i, _ := range rss_decoded.EntryList{
-		if rss_decoded.EntryList[i].Content != ""{
-			fmt.Println(rss_decoded.EntryList[i].Content)
-		}
+	// for i, _ := range rss_decoded.EntryList{
+	// 	if rss_decoded.EntryList[i].Content != ""{ } }
+	block_quote := rss_decoded.EntryList[0].Content
+	match, _ := regexp.Compile("<blockquote>([^.$]*)</blockquote>")
+	block_quote_find := match.FindStringSubmatch(block_quote)
+	if len(block_quote_find) > 1 {
+		fmt.Println(block_quote_find[1])	
+		http_request(get_field_from_json("slack_url"), block_quote_find[1])				
+	}	
 
-	}
+
 	return
 }
 
-func slack_bot_post(message string){
-	url_to_use := get_field_from_json("slack_url")
-	var message_bytes = []byte(message)
-	req, err := http.NewRequest("POST", url_to_use , bytes.NewBuffer(message_bytes))
+func http_request(url_to_touch string, if_post_data string) (body []byte){
+	//Made this generic so anything can poll the internet without copy+pasta
+	//if_post_data has...data to post then it obviously is a POST, if not it's a GET
+	get_or_post := "GET"
+	post_message_bytes := []byte(if_post_data)
+	if if_post_data != ""{
+		get_or_post = "POST"
+	}
+
+	req, err := http.NewRequest(get_or_post, url_to_touch , bytes.NewBuffer(post_message_bytes))
 	req.Header.Set("Content-Type", "text/plain")
-	slack_client := &http.Client{}
-	response, err := slack_client.Do(req)
+	http_client := &http.Client{}
+	response, err := http_client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer response.Body.Close()
-	fmt.Println("response Status:", response.Status)
-	fmt.Println("response Headers:", response.Header)
-	body, _ := ioutil.ReadAll(response.Body)
-	fmt.Println("response Body:", string(body))
+
+	body, _ = ioutil.ReadAll(response.Body)
+	return 
 }
 
