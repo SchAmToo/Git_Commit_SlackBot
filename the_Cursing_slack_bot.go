@@ -53,8 +53,10 @@ func main() {
 		go func(){
 			fmt.Println(now)
 			for _, username := range get_field_from_json().Usernames {
-				fmt.Println(username)
-				github_rss_feed(username)
+				go func(username interface{}) {
+					fmt.Println(username)
+					github_rss_feed(username.(string))
+				}(username)
 			}
 		}()
 	}
@@ -126,7 +128,7 @@ func github_rss_feed(username string) {
 		time_of_update, _ := time.Parse(time.RFC3339, rss_decoded.EntryList[0].Updated)
 
 		// This looks like a mess, but it basically is just checking for any commits within the past 2 minutes (The window of the ticker)
-		if time_of_update.After(time.Now().UTC().Add(-2 * time.Minute)){
+		if time_of_update.After(time.Now().UTC().Add(-1 * time.Minute)){
 
 			block_quote := rss_decoded.EntryList[0].Content
 			match, _ := regexp.Compile("<blockquote>([^.$]*)</blockquote>")
