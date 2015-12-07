@@ -28,9 +28,36 @@ func main() {
 	//goroutine of pushing that to slackbot
 	//go github_rss_feed(username)
 	//fmt.Println(get_field_from_json("slack_url"))
-	for _, username := range get_field_from_json().Usernames {
-		github_rss_feed(username)
+	ticker := time.NewTicker(time.Minute * 2)
+//	quit := make(chan struct{})
+	fmt.Println("Started?")
+	// go func(){
+	// 	for{
+	// 		select {
+	// 		case <- ticker.C:
+	// 			fmt.Println("Going")
+	// 			//go func(){
+	// 				for _, username := range get_field_from_json().Usernames {
+	// 					github_rss_feed(username)
+	// 				}
+	// 			//}()
+	// 		case <- quit:
+	// 			fmt.Println("Stopped")
+	// 			ticker.Stop()
+	// 			return
+	// 		}
+				
+	// 	}
+	// }()
+	for now := range ticker.C{
+		go func(){
+			fmt.Println(now)
+			for _, username := range get_field_from_json().Usernames {
+				github_rss_feed(username)
+			}
+		}()
 	}
+
 }
 
 type JSON_fields struct{
@@ -61,7 +88,7 @@ func github_rss_feed(username string) {
 		Title		string		`xml:"title"`
 		Summary		string		`xml:"summary"`
 		Content		string		`xml:"content"`
-		Id		string		`xml:"id"`
+		Id			string		`xml:"id"`
 		Updated		string		`xml:"updated"`
 		Link		string		`xml:"link"`
 		Author		Author		`xml:"author"`
@@ -97,6 +124,7 @@ func github_rss_feed(username string) {
 
 		time_of_update, _ := time.Parse(time.RFC3339, rss_decoded.EntryList[0].Updated)
 
+		// This looks like a mess, but it basically is just checking for any commits within the past 2 minutes (The window of the ticker)
 		if time_of_update.After(time.Now().UTC().Add(-2 * time.Minute)){
 
 			block_quote := rss_decoded.EntryList[0].Content
