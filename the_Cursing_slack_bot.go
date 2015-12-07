@@ -21,28 +21,33 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
+	"time"
 )
 func main() {
-	//goroutine grabbing rss feeds from yaml(?) of each username
+	//goroutine grabbing rss feeds from json of each username
 	//goroutine of pushing that to slackbot
 	//go github_rss_feed(username)
 	//fmt.Println(get_field_from_json("slack_url"))
-	github_rss_feed("schamtoo")
+	for _, username := range get_field_from_json().Usernames {
+		github_rss_feed(username)
+	}
 }
 
-func get_field_from_json(field_wanted string) (field_returned string){
+type JSON_fields struct{
+	Usernames	[]string 	`json:"usernames"`
+	Slack_URL 	string 	`json:"slack_url"`
+}
+
+func get_field_from_json() (decoded_json JSON_fields){
 	json_to_decode, err := ioutil.ReadFile("actual.json")
 	if err != nil{
 		fmt.Println(err)
 	}
-	var decoded_json interface{}
 	err = json.Unmarshal(json_to_decode, &decoded_json)	
-	decoded_json_map := decoded_json.(map[string]interface{})
+	// decoded_json_map := decoded_json.(map[string]JSON_fields)
 	if err != nil{
 		fmt.Println(err)
 	}
-	field_returned = decoded_json_map[field_wanted].(string)
-	
 	return 
 }
 
@@ -84,13 +89,28 @@ func github_rss_feed(username string) {
 
 	// for i, _ := range rss_decoded.EntryList{
 	// 	if rss_decoded.EntryList[i].Content != ""{ } }
-	block_quote := rss_decoded.EntryList[0].Content
-	match, _ := regexp.Compile("<blockquote>([^.$]*)</blockquote>")
-	block_quote_find := match.FindStringSubmatch(block_quote)
-	if len(block_quote_find) > 1 {
-		fmt.Println(block_quote_find[1])	
-		http_request(get_field_from_json("slack_url"), block_quote_find[1])				
-	}	
+
+	// Check to see the last commit, if no commits exists then ... nothing to post! 
+	if len(rss_decoded.EntryList) > 0 {
+
+	//Insert check to see if not only THAT commit exists, but commits before then too (more than in the time window)
+
+		time_of_update, _ := time.Parse(time.RFC3339, rss_decoded.EntryList[0].Updated)
+
+		if time_of_update.After(time.Now().UTC().Add(-2 * time.Minute)){
+
+			block_quote := rss_decoded.EntryList[0].Content
+			match, _ := regexp.Compile("<blockquote>([^.$]*)</blockquote>")
+			block_quote_find := match.FindStringSubmatch(block_quote)
+
+			if len(block_quote_find) > 1 {
+				what_to_post := rss_decoded.EntryList[0].Author.Name + " at " + rss_decoded.EntryList[0].Updated + " : " + time.Now().UTC().Format(time.RFC3339) + " ```" + block_quote_find[1] + " ```"
+				fmt.Println(what_to_post)
+				http_request(get_field_from_json().Slack_URL, what_to_post)				
+			}		
+		}
+	}
+	
 
 
 	return
