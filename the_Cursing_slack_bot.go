@@ -28,7 +28,7 @@ func main() {
 	//goroutine of pushing that to slackbot
 	//go github_rss_feed(username)
 	//fmt.Println(get_field_from_json("slack_url"))
-	ticker := time.NewTicker(time.Minute * 2)
+	ticker := time.NewTicker(time.Minute * 1)
 //	quit := make(chan struct{})
 	fmt.Println("Started?")
 	// go func(){
@@ -53,6 +53,7 @@ func main() {
 		go func(){
 			fmt.Println(now)
 			for _, username := range get_field_from_json().Usernames {
+				fmt.Println(username)
 				github_rss_feed(username)
 			}
 		}()
