@@ -1,4 +1,7 @@
 {
-	"slack_url": "",
+	"slack_url": ["https://yourteamname.slack.com/services/hooks/slackbot?token=YOURTOKEN"], 
 	"usernames": ["SchAmToo"]
 }
+
+//Get your token by going to your slack channel and Configure Integrations -> SlackBot -> Add New Integration -> Copy the URL and add it to the SLACK_URL
+//Rename this file "actual.json"
