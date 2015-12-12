@@ -118,7 +118,7 @@ func github_rss_feed(username string) {
 			block_quote_find := match.FindStringSubmatch(block_quote)
 
 			if len(block_quote_find) > 1 {
-				what_to_post := rss_decoded.EntryList[0].Author.Name + " at " + rss_decoded.EntryList[0].Updated + " : " + time.Now().UTC().Format(time.RFC3339) + " ```" + block_quote_find[1] + " ```"
+				what_to_post := rss_decoded.EntryList[0].Author.Name + " at " + rss_decoded.EntryList[0].Updated + " : ```" + block_quote_find[1] + " ```"
 				fmt.Println(what_to_post)
 				for i, _ := range get_field_from_json().Slack_URL{
 					http_request(get_field_from_json().Slack_URL[i], what_to_post)
